@@ -89,10 +89,11 @@ struct Main {
     }`));
     auto requestInfo = RequestInfo("https://reqres.in/api/users/2");
     auto promise = window.fetch(requestInfo, ri);
-    promise.then(r => r.text).then((scope data){
+    const promise_then = promise.then(r => r.text).then((scope data){
       console.log("Resolved");
         console.log(typeof(data).stringof);
         auto sp = ScopedPool(m_pool);
+        console.log(data.as!string);
         auto user_json = parseJSON!PoolStackAllocator(data.as!string);
         User user = user_json.read!User;
         console.log(user.createdAt);
@@ -100,7 +101,7 @@ struct Main {
         console.log("Caught error");
         console.log(reason);
       });
-
+    libwasm_await__void(promise_then.handle.handle);
     string s = new string(5);
     s = "hello";
     console.log(s);
