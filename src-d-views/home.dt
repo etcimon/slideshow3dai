@@ -14,3 +14,6 @@ html
 			p.
 				These are the #[em contents] of point #{i}. Multiple
 				lines of text are contained in this paragraph.
+		ul
+			li: a(href="/test2", onclick="callNative('navigate_to', '/test2'); return false;") Test2
+			li: a(href="/home", onclick="callNative('navigate_to', '/home'); return false;") Home

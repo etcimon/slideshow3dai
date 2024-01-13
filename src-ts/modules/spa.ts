@@ -33,7 +33,6 @@ export let jsExports = {
             libwasm.addObject(style)
         },
         addClass: (node: number, classLen: number, classOffset: number) => {
-            console.log(libwasm)
             libwasm.objects[node].classList.add(
                 decoder.string(classLen, classOffset)
             )

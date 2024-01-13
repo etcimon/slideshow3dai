@@ -27,10 +27,14 @@ dist-ssr
 *.log
 *.zip
 .dub
-dub.selections.json
 *.lock
 *.wasm
 .next
 .env
 .env.local
 .DS_Store
+.dub
+*.selections.json
+*.a
+*.lib
+build/*

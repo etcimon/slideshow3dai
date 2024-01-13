@@ -12,7 +12,6 @@ import fast.json;
 import fast.format;
 import libwasm.moment;
 import optional;
-import object;
 import libwasm.promise;
 nothrow:
 @safe:
@@ -44,8 +43,13 @@ struct Input {
     this.emit(input);
   }
   @entering!"/home" Optional!(Promise!void) home(ref RouterEvent ev) {
-    console.log("called promise");
+    console.log("called promise home");
     router().setTitle("Home");
+    return Optional!(Promise!void)();
+  }
+  @entering!"/test2" Optional!(Promise!void) test2(ref RouterEvent ev) {
+    console.log("called promise test2");
+    router().setTitle("Test2");
     return Optional!(Promise!void)();
   }
 }
@@ -72,12 +76,35 @@ struct Main {
   }
 
   void catchOnClick(Handle hndl) {
+    auto pool = ScopedPool(m_pool);
     MouseEvent ev = MouseEvent(hndl);
     console.log("Hello from D");
     console.log(ev);
+    auto requestInfo = RequestInfo("https://reqres.in/api/users/2");
+        RequestInit ri = RequestInit(JSON.parse(`{
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json;charset=utf-8"
+      },
+      "body": "{\"user\": 123}"
+    }`));
+    auto promise = window.fetch(requestInfo, ri);
+    promise.then(r => r.text).then((scope data){
+      console.log("Resolved");
+        console.log(typeof(data).stringof);
+        auto sp = ScopedPool(m_pool);
+        console.log(data.as!string);
+        auto user_json = parseJSON!PoolStackAllocator(data.as!string);
+        User user = user_json.read!User;
+        console.log(user.createdAt);
+      }).error((scope reason) {
+        console.log("Caught error");
+        console.log(reason);
+      }).await();
+      console.log("Finished");
   }
 
-  @connect!("field.enter") void enter() @trusted {
+  @connect!("field.enter") void enter() {
     auto pool = ScopedPool(m_pool);
     import diet.html : compileHTMLDietFile;
         RequestInit ri = RequestInit(JSON.parse(`{
@@ -89,7 +116,7 @@ struct Main {
     }`));
     auto requestInfo = RequestInfo("https://reqres.in/api/users/2");
     auto promise = window.fetch(requestInfo, ri);
-    const promise_then = promise.then(r => r.text).then((scope data){
+    auto promise_then = promise.then(r => r.text).then((scope data){
       console.log("Resolved");
         console.log(typeof(data).stringof);
         auto sp = ScopedPool(m_pool);
@@ -101,7 +128,8 @@ struct Main {
         console.log("Caught error");
         console.log(reason);
       });
-    libwasm_await__void(promise_then.handle.handle);
+    auto new_promise = [promise_then.handle].all();
+    new_promise.await();
     string s = new string(5);
     s = "hello";
     console.log(s);
@@ -132,7 +160,6 @@ struct App {
   
   void construct() {
     m_pool = ManagedPool(64*1024);
-    PoolStack.push(m_pool);
   }
 
   @trusted static void _start() {

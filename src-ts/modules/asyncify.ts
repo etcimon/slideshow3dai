@@ -21,13 +21,13 @@
 
 const EXPORTED_FROM_D = ['domEvent', 'jsCallback0', 'jsCallback']
 
-const DATA_ADDR = 16;
+// Start unwind buffers halfway through the stack space
+const DATA_ADDR = 524288;
 // Place actual data right after the descriptor (which is 2 * sizeof(i32) = 8 bytes).
 const DATA_START = DATA_ADDR + 8;
-// End data at 1024 bytes. This is where the unused area by Clang ends and real stack / data begins.
-// Because this might differ between languages and parameters passed to wasm-ld, ideally we would
-// use `__stack_pointer` here, but, sadly, it's not exposed via exports yet.
-const DATA_END = 1024;
+// End data at "-Lstack-size=1048576", configured in ldc2.conf for wasm by default
+// ideally we would use `__stack_pointer` here, but, sadly, it's not exposed via exports yet.
+const DATA_END = 1048576;
 
 const WRAPPED_EXPORTS = new WeakMap();
 
