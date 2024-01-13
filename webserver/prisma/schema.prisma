@@ -1,0 +1,494 @@
+datasource db {
+  provider = "postgres"
+  url      = "postgresql://postgres:Psswrd128@localhost:5432/cimons"
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+model EmailDomainBlocklist {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  domainName String   @unique @map("domain_name")
+
+  @@map("email_domain_blocklist")
+}
+
+// --------------------------------------
+
+model User {
+  id               Int        @id @default(autoincrement())
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  confirmedAt      DateTime?  @map("confirmed_at") @db.Timestamptz(3)
+  displayName      String?    @unique @map("display_name") @db.VarChar(120)
+  email            String     @unique @db.VarChar(320)
+  hashedPassword   String?    @map("hashed_password") @db.VarChar(255)
+  role             GlobalRole @default(CUSTOMER) @map("user_role")
+  type             UserType   @default(PERSONAL) @map("type_")
+  stripeCustomerId String?    @unique @map("stripe_customer_id")
+  referrerId       Int?       @map("referral_id")
+
+  tokens        Token[]
+  sessions      Session[]
+  memberships   OrganizationMember[]
+  addresses     AssignedAddress[]
+  subscriptions Subscription[]
+  payments      Payment[]
+  debits        Debit[]
+  events        UserEvent[]
+  profile       Profile?
+  preferences   Preferences?
+  notifications Notification[]
+  referrer      User?                @relation("users_referrals", fields: [referrerId], references: [id])
+  referrees     User[]               @relation("users_referrals")
+
+  @@index([stripeCustomerId])
+  @@index([createdAt])
+  @@map("users")
+}
+
+// The owners of the SaaS (you) can have a SUPERADMIN role to access all data
+enum GlobalRole {
+  SUPERADMIN
+  CUSTOMER
+  AUTHENTICATED // used for 2FA. Always check this
+
+  @@map("global_role")
+}
+
+enum UserType {
+  BUSINESS
+  PERSONAL
+
+  @@map("user_type")
+}
+
+model Profile {
+  id                       Int              @id @default(autoincrement())
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  fullName                 String?          @map("full_name") @db.VarChar(255)
+  secondaryEmail           String?          @map("secondary_email") @db.VarChar(320)
+  businessName             String?          @map("business_name") @db.VarChar(255)
+  country                  String?          @db.VarChar(2)
+  position                 String?          @map("position_") @db.VarChar(255)
+  mobilePhoneNumber        String?          @map("mobile_phone_number") @db.VarChar(32)
+  phoneNumber              String?          @map("phone_number") @db.VarChar(32)
+  phoneNumberType          PhoneNumberType? @map("phone_number_type")
+  secondaryPhoneNumber     String?          @map("secondary_phone_number") @db.VarChar(32)
+  secondaryPhoneNumberType PhoneNumberType? @map("secondary_phone_number_type")
+  userId                   Int              @unique @map("user_id")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("profiles")
+}
+
+enum PhoneNumberType {
+  CELL
+  OFFICE
+  HOME
+  OTHER
+
+  @@map("phone_number_type")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId    Int              @map("user_id")
+  type      NotificationType @map("type_")
+  details   Json
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("users_notifications")
+}
+
+enum NotificationType {
+  PHOTO_READY
+  TRAINING_READY
+  ANNOUNCEMENT
+}
+
+model Preferences {
+  id                     Int      @id @default(autoincrement())
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  allowEmailAnnoucements Boolean? @map("allow_email_announcements")
+
+  userId Int @unique @map("user_id")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("users_preferences")
+}
+
+model UserEvent {
+  id        Int            @id @default(autoincrement())
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  type      UserEventTypes
+  ipAddress String         @map("ip_address") @db.Inet
+  details   Json
+  userId    Int            @map("user_id")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_events")
+}
+
+enum UserEventTypes {
+  SIGN_UP
+  SIGN_IN
+  PASSWORD_CHANGE
+  PROFILE_UPDATE
+  DELETE_REQUEST
+  // ...
+
+  @@map("user_event_types")
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  name      String   @map("organization_name")
+
+  members OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  role           OrganizationRole @map("org_role")
+  canTrain       Boolean          @default(false) @map("can_train")
+  // When the user joins, we will clear out the name and email and set the user.
+  invitedName    String?          @map("invited_name") @db.VarChar(255)
+  invitedEmail   String?          @map("invited_email") @db.VarChar(320)
+  organizationId Int              @map("organization_id")
+  userId         Int?             @map("user_id")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, invitedEmail, userId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("organization_members")
+}
+
+enum OrganizationRole {
+  UNAUTHORIZED
+  OWNER
+  ADMIN
+  USER
+  GUEST
+
+  @@map("organization_role")
+}
+
+model Address {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  address1    String?  @db.VarChar(120)
+  address2    String?  @db.VarChar(120)
+  city        String?
+  stateId     Int?     @map("state_id")
+  countryCode String   @map("countryCode") @db.VarChar(2)
+  postalCode  String?  @map("postal_code") @db.VarChar(16)
+
+  state   State?  @relation(fields: [stateId], references: [id])
+  country Country @relation(fields: [countryCode], references: [iso2])
+
+  addressees AssignedAddress[]
+
+  @@map("addresses")
+}
+
+model AssignedAddress {
+  id        Int         @id @default(autoincrement())
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  type      AddressType @default(GENERAL) @map("type_")
+  isPrimary Boolean     @map("is_primary")
+  userId    Int         @map("user_id")
+  addressId Int         @map("address_id")
+
+  address Address @relation(fields: [addressId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type, isPrimary])
+  @@index([userId])
+  @@map("users_addresses")
+}
+
+model Plan {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  name          String   @map("plan_name") @db.VarChar(255)
+  stripePriceId String   @unique @map("stripe_price_id") @db.VarChar(64)
+  price         Int
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                  Int                @id @default(autoincrement())
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  endedAt             DateTime           @default(now()) @map("ended_at") @db.Timestamptz(3)
+  billingCycleStartAt DateTime?          @map("billing_cycle_start_at") @db.Timestamptz(3)
+  stripeId            String?            @unique @map("stripe_subscription_id") @db.VarChar(64)
+  planId              Int                @map("plan_id")
+  status              SubscriptionStatus
+  userId              Int                @map("user_id")
+
+  plan Plan @relation(fields: [planId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("subscription_status")
+}
+
+model Debit {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  amount    Decimal
+  type      DebitType @map("type_")
+  details   Json // aggregate debits?
+  userId    Int       @map("user_id")
+  paymentId Int?      @map("payment_id") // if refunded or chargeback
+
+  user    User     @relation(fields: [userId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([paymentId])
+  @@map("debits")
+}
+
+enum DebitType {
+  TRAINING
+  PROMPT
+  SUBSCRIPTION // not available at first
+  CHARGEBACK
+  REFUND
+
+  @@map("debit_type")
+}
+
+model Payment {
+  id              Int             @id @default(autoincrement())
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId          Int             @map("user_id")
+  amount          Decimal
+  provider        PaymentProvider
+  type            PaymentType     @map("type_")
+  details         Json?
+  stripePaymentId String?         @map("stripe_payment_id") @db.VarChar(64)
+  // invoice?
+  // status?
+
+  user  User    @relation(fields: [userId], references: [id])
+  debit Debit[] // refunds or chargebacks
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([stripePaymentId])
+  @@map("payments")
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  COINBASE
+
+  @@map("payment_provider")
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  CREDITS
+
+  @@map("payment_type")
+}
+
+enum AddressType {
+  POSTAL
+  BILLING
+  GENERAL
+
+  @@map("address_type")
+}
+
+model Session {
+  id                 Int       @id @default(autoincrement())
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expiresAt          DateTime? @map("expires_at") @db.Timestamptz(3)
+  handle             String    @unique @db.VarChar(255)
+  hashedSessionToken String?   @map("hashed_session_token") @db.VarChar(255)
+  antiCSRFToken      String?   @map("anti_csrf_token") @db.VarChar(255)
+  publicData         String?   @map("public_data")
+  privateData        String?   @map("private_data")
+  userId             Int?      @map("user_id")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Token {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  hashedToken String    @map("hashed_token") @db.VarChar(255)
+  type        TokenType @map("type_")
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(3)
+  sentTo      String?   @map("sent_to")
+  name        String?
+  userId      Int       @map("user_id")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([hashedToken, type])
+  @@map("tokens")
+}
+
+enum TokenType {
+  RESET_PASSWORD
+  CHANGE_EMAIL
+  LOGIN_2FA
+  API_KEY
+
+  @@map("token_type")
+}
+
+model Installation {
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  startedAt       DateTime? @map("started_at") @db.Timestamptz(3)
+  destroyedAt     DateTime? @map("destroyed_at") @db.Timestamptz(3)
+  lockHeartbeatAt DateTime? @map("lock_heartbeat_at") @db.Timestamptz(3) // update every seconds when using SSH
+  lockOwner       String?   @map("lock_owner") @db.Uuid
+  instanceId      String?   @map("instance_id") @db.Uuid
+  ipAddress       String?   @map("ip_address") @db.VarChar(128)
+  os              String?   @db.VarChar(255)
+  hardware        Json?
+
+  logs InstallationLog[]
+
+  @@index([instanceId])
+  @@map("installations")
+}
+
+model InstallationLog {
+  id             Int         @id @default(autoincrement())
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  severity       LogSeverity
+  details        Json
+  installationId Int         @map("installation_id")
+
+  installation Installation @relation(fields: [installationId], references: [id])
+
+  @@map("installation_logs")
+}
+
+enum LogSeverity {
+  TRACE
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+  NONE
+
+  @@map("log_severity")
+}
+
+model State {
+  id          Int       @id @default(autoincrement())
+  name        String    @map("state_name") @db.VarChar(255)
+  countryId   Int       @map("country_id")
+  countryCode String    @map("country_code") @db.Char(2)
+  fipsCode    String?   @map("fips_code") @db.VarChar(8)
+  iso2        String    @db.VarChar(5)
+  type        String?   @map("type_") @db.VarChar(45)
+  latitude    Decimal?  @db.Decimal(10, 8)
+  longitude   Decimal?  @db.Decimal(11, 8)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz(3)
+  flag        Int       @default(1) @db.SmallInt
+  wikiDataId  String?   @db.VarChar(255)
+
+  country   Country   @relation(fields: [countryId], references: [id])
+  addresses Address[]
+
+  @@unique([countryId, name, type])
+  @@map("states")
+}
+
+model Country {
+  id             Int      @id @default(autoincrement()) @db.SmallInt
+  name           String   @unique @db.VarChar(100)
+  iso3           String   @unique @db.Char(3)
+  numericCode    String   @map("numeric_code") @db.Char(3)
+  iso2           String   @unique @db.Char(2)
+  phoneCode      String   @map("phone_code") @db.VarChar(255)
+  capital        String?  @db.VarChar(255)
+  currency       String   @db.VarChar(255)
+  currencyName   String   @map("currency_name") @db.VarChar(255)
+  currencySymbol String   @map("currency_symbol") @db.VarChar(255)
+  tld            String   @db.VarChar(255)
+  native         String?  @db.VarChar(255)
+  region         String   @db.VarChar(255)
+  subregion      String   @db.VarChar(255)
+  timezones      Json?
+  translations   Json?
+  latitude       Decimal  @db.Decimal(10, 8)
+  longitude      Decimal  @db.Decimal(11, 8)
+  emoji          String   @db.VarChar(191)
+  emojiU         String   @db.VarChar(191)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  flag           Int      @default(1) @db.SmallInt
+  wikiDataId     String?  @map("wiki_data_id") @db.VarChar(255)
+  adjectival     String?
+
+  states    State[]
+  addresses Address[]
+
+  @@map("countries")
+}

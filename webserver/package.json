@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "name": "cimons-webserver",
+  "description": "Mostly used for handling DB migrations",
+  "version": "1.0.0",
+  "author": "Etienne Cimon <etienne@cimons.com>",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.8.0"
+    }
+}
