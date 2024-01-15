@@ -99,22 +99,22 @@ version(OSX) {
 </dict>
 </plist>`;
 		if (existsFile(data_folder_path ~ "version.txt"))
-			try removeFile(data_folder_path ~ "version.txt"); catch {}
-		try writeFile(data_folder_path ~ "version.txt", cast(ubyte[])TORR_VERSION); catch {}
+			try removeFile(data_folder_path ~ "version.txt"); catch (Exception e) {}
+		try writeFile(data_folder_path ~ "version.txt", cast(ubyte[])TORR_VERSION);catch (Exception e) {}
 		if (existsFile("/Library/LaunchDaemons/cimons.plist")) {
-			try executeShell("launchctl stop /Library/LaunchDaemons/cimons.plist"); catch {}
-			try executeShell("launchctl unload /Library/LaunchDaemons/cimons.plist"); catch {}
+			try executeShell("launchctl stop /Library/LaunchDaemons/cimons.plist"); catch (Exception e) {}
+			try executeShell("launchctl unload /Library/LaunchDaemons/cimons.plist"); catch (Exception e) {}
 			if (!is_update) 
-				try removeFile("/Library/LaunchDaemons/cimons.plist"); catch {}
+				try removeFile("/Library/LaunchDaemons/cimons.plist"); catch (Exception e) {}
 			else {
-				try removeFile(cimons_path); catch {}
-				try copyFile(updater_path, cimons_path); catch {}
+				try removeFile(cimons_path); catch (Exception e) {}
+				try copyFile(updater_path, cimons_path); catch (Exception e) {}
 				import std.process;
 				executeShell("chmod +x " ~ cimons_path, string[string].init, Config.suppressConsole);
 			}
 		}
 		if (!is_update)
-			try writeFile("/Library/LaunchDaemons/cimons.plist", cast(ubyte[])plist_str); catch {}
+			try writeFile("/Library/LaunchDaemons/cimons.plist", cast(ubyte[])plist_str); catch (Exception e) {}
 		startService();
 	}
 	

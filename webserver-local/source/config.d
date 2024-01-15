@@ -224,7 +224,7 @@ string getStartMenuFolder() {
 	import standardpaths;
 	static string program_files;
 	if (!program_files) {
-		string[] paths = standardPaths(StandardPath.Applications);
+		string[] paths = standardPaths(StandardPath.applications);
 		string path;
 		foreach (path_; paths) {
 			if (path_)
@@ -247,7 +247,7 @@ string getStartMenuFolder() {
 			data_folder = TORR_EXE_FOLDER_PATH ~ "Data/";
 		}
 		else version(Windows) {
-			string[] paths = standardPaths(StandardPath.Data);
+			string[] paths = standardPaths(StandardPath.data);
 			string path;
 			foreach (path_; paths) {
 				if (path_)

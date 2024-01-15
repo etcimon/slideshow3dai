@@ -72,10 +72,10 @@ private void sendFile(scope HTTPServerRequest req, scope HTTPServerResponse res,
 	import vibe.inet.mimetypes;
 	import vibe.inet.url;
 	import std.digest.md;
-	res.headers.addField("Access-Control-Allow-Origin", "*");
-	res.headers.addField("Access-Control-Allow-Credentials", "true");
-	res.headers.addField("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-	res.headers.addField("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
+	res.headers.insert("Access-Control-Allow-Origin", "*");
+	res.headers.insert("Access-Control-Allow-Credentials", "true");
+	res.headers.insert("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+	res.headers.insert("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
 
 	// return if the file does not exist
 	if (!existsFile(pathstr))
@@ -188,10 +188,10 @@ auto runCimons(bool open_browser = false)
 	version(PrivateAPI) {
 		auto all_access_control = (scope HTTPServerRequest req, scope HTTPServerResponse res) {
 			if (req.method == HTTPMethod.OPTIONS) {
-				res.headers.addField("Access-Control-Allow-Origin", "*");
-				res.headers.addField("Access-Control-Allow-Credentials", "true");
-				res.headers.addField("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-				res.headers.addField("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
+				res.headers.insert("Access-Control-Allow-Origin", "*");
+				res.headers.insert("Access-Control-Allow-Credentials", "true");
+				res.headers.insert("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+				res.headers.insert("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
 				
 				res.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
 				res.headers["Pragma"] = "no-cache";
@@ -208,10 +208,10 @@ auto runCimons(bool open_browser = false)
 				HTTPReverseProxySettings proxy_settings = new HTTPReverseProxySettings;
 				proxy_settings.destinationHost = "127.0.0.1";
 				proxy_settings.destinationPort = 9009;
-				proxy_settings.defaultResponseHeaders.addField("Access-Control-Allow-Origin", "*");
-				proxy_settings.defaultResponseHeaders.addField("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-				proxy_settings.defaultResponseHeaders.addField("Access-Control-Allow-Credentials", "true");
-				proxy_settings.defaultResponseHeaders.addField("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
+				proxy_settings.defaultResponseHeaders.insert("Access-Control-Allow-Origin", "*");
+				proxy_settings.defaultResponseHeaders.insert("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+				proxy_settings.defaultResponseHeaders.insert("Access-Control-Allow-Credentials", "true");
+				proxy_settings.defaultResponseHeaders.insert("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
 				proxy_settings.clientSettings = new HTTPClientSettings;
 				proxy_settings.clientSettings.http2.disable = true;
 
@@ -323,8 +323,8 @@ void validateInstallation() {
 					enforce(str == "Valid");
 
 					InetHeaderMap hdrs;
-					hdrs.addField("Installation-GUID", Globals.GUID);
-					reverse_proxy_settings.defaultHeaders = hdrs;
+					hdrs.insert("Installation-GUID", Globals.GUID);
+					reverse_proxy_settings.defaultHeaders = hdrs.clone();
 					success = true;
 			});
 			success = true;
@@ -357,7 +357,7 @@ void registerInstallation() {
 					Extras extras;
 					version(Windows) try {
 						extras.computer_name = getComputerName();
-					} catch (Throwable e) {
+					} catch (Exception e) {
 						logErrorFile("%s", e.toString());
 					}
 					req.writeJsonBody(extras);
@@ -365,8 +365,8 @@ void registerInstallation() {
 				(scope HTTPClientResponse res) {
 					Globals.GUID = res.headers.get("Set-Installation-GUID", "");
 					InetHeaderMap hdrs;
-					hdrs.addField("Installation-GUID", Globals.GUID);
-					reverse_proxy_settings.defaultHeaders = hdrs;
+					hdrs.insert("Installation-GUID", Globals.GUID);
+					reverse_proxy_settings.defaultHeaders = hdrs.clone();
 					res.dropBody();
 					success = true;
 				});

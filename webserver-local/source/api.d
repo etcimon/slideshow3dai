@@ -103,12 +103,12 @@ static SysTime last_user_activity;
 private void setDefaultHeaders(scope HTTPServerResponse res) {
 	last_user_activity = Clock.currTime(UTC());
 	version(PrivateAPI) {
-		res.headers.addField("Access-Control-Allow-Origin", "*");
-		res.headers.addField("Access-Control-Allow-Credentials", "true");
-		res.headers.addField("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		res.headers.addField("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
+		res.headers.insert("Access-Control-Allow-Origin", "*");
+		res.headers.insert("Access-Control-Allow-Credentials", "true");
+		res.headers.insert("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		res.headers.insert("Access-Control-Allow-Headers", "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type");
 	} else {		
-		res.headers.addField("Access-Control-Allow-Origin", "cimons.com");
+		res.headers.insert("Access-Control-Allow-Origin", "cimons.com");
 	}
 	res.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
 	res.headers["Pragma"] = "no-cache";
@@ -128,7 +128,7 @@ void forwardSetCookies(scope HTTPClientResponse cres, scope HTTPServerResponse r
 	import vibe.utils.string : icmp2;
 	if ("Set-Cookie" !in cres.headers) return;
 	import std.array : replace;
-	cres.headers.getAll("set-cookie", (const string value) { res.headers.addField("Set-Cookie", (cast()value).replace("Secure; ", "")); });
+	cres.headers.getValuesAt("set-cookie", (const string value) { res.headers.insert("Set-Cookie", (cast()value).replace("Secure; ", "")); });
 }
 
 
