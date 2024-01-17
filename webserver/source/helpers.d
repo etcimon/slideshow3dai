@@ -29,22 +29,27 @@ private RedisClient g_redisClient;
 
 SMTPClientSettings mailer;
 
-auto connectDB() {
-	if (!g_pgdb) {
+auto connectDB()
+{
+	if (!g_pgdb)
+	{
 		import std.random : uniform;
-		version(Windows) {
+
+		version (Windows)
+		{
 			auto params = [
-				"host" : "127.0.0.1",
-				"database" : "cimons",
+				"host": "127.0.0.1",
+				"database": "cimons",
 				"user": "root",
 				"statement_timeout": "90000"
 			];
 
 		}
-		else {
+		else
+		{
 			auto params = [
-				"host" : "/tmp/.s.PGSQL.5432",
-				"database" : "cimons",
+				"host": "/tmp/.s.PGSQL.5432",
+				"database": "cimons",
 				"user": "root",
 				"statement_timeout": "90000"
 			];
@@ -55,19 +60,23 @@ auto connectDB() {
 		//auto upd = scoped!PGCommand(pgconn, "SET statement_timeout = 90000");
 		//upd.executeNonQuery();
 	}
-	
+
 	return g_pgdb.lockConnection();
 }
 
-RedisDatabase connectCache() {
+RedisDatabase connectCache()
+{
 	if (!g_redisClient)
 	{
-		version(Windows) {
+		version (Windows)
+		{
 			g_redisClient = connectRedis("127.0.0.1:6379");
-		} else {
+		}
+		else
+		{
 			g_redisClient = connectRedis("/tmp/redis.sock");
 		}
-	}	
+	}
 	return g_redisClient.getDatabase(0);
 }
 
@@ -75,40 +84,46 @@ RedisDatabase connectCache() {
 string toIPAddress(string peer)
 {
 	import std.string : lastIndexOf;
-	if (peer.length == 0) return "";
+
+	if (peer.length == 0)
+		return "";
 	size_t idx = peer.lastIndexOf(':');
-	if (idx == -1) idx = peer.length;
+	if (idx == -1)
+		idx = peer.length;
 	return peer[0 .. idx];
 }
 
 string afterColon(string msg)
 {
 	import std.string : lastIndexOf;
+
 	auto idx = msg.lastIndexOf(':');
-	if (idx == -1) return msg;
-	if (idx >= msg.length - 2) return "";
-	return msg[idx+1 .. $];
+	if (idx == -1)
+		return msg;
+	if (idx >= msg.length - 2)
+		return "";
+	return msg[idx + 1 .. $];
 }
 
 enum Transaction = `try {
-				auto begin = scoped!PGCommand(pgconn, "BEGIN");
-				begin.executeNonQuery();
-			} catch (Exception e) {
-				{
-					auto rb = scoped!PGCommand(pgconn, "ROLLBACK");
-					rb.executeNonQuery();
-				}
-				{
-					auto begin = scoped!PGCommand(pgconn, "BEGIN");
-					begin.executeNonQuery();
-				}
-			}
-			scope(failure) {
-				auto rollback = scoped!PGCommand(pgconn, "ROLLBACK");
-				rollback.executeNonQuery();
-			}
-			scope(success) {
-				auto commit = scoped!PGCommand(pgconn, "COMMIT");
-				commit.executeNonQuery();
-			}
+		auto begin = scoped!PGCommand(pgconn, "BEGIN");
+		begin.executeNonQuery();
+	} catch (Exception e) {
+		{
+			auto rb = scoped!PGCommand(pgconn, "ROLLBACK");
+			rb.executeNonQuery();
+		}
+		{
+			auto begin = scoped!PGCommand(pgconn, "BEGIN");
+			begin.executeNonQuery();
+		}
+	}
+	scope(failure) {
+		auto rollback = scoped!PGCommand(pgconn, "ROLLBACK");
+		rollback.executeNonQuery();
+	}
+	scope(success) {
+		auto commit = scoped!PGCommand(pgconn, "COMMIT");
+		commit.executeNonQuery();
+	}
 `;

@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 
 # D
+*.exe
+*.pdb
+log.txt
 *.log
 *.zip
 .dub
