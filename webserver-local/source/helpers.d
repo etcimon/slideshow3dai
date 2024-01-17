@@ -42,7 +42,7 @@ string otherSHA256(string filename, HTTPClientSettings settings = null)
 	while (!sha256 && tries < 3) {
 		bool success;
 		try {
-			requestHTTP(TORR_COM_URL ~ "sha256/" ~ filename, (scope req) { },
+			requestHTTP(CIMONS_COM_URL ~ "sha256/" ~ filename, (scope req) { },
 			(scope res) { 
 				if (res.statusCode == HTTPStatus.ok) {
 					success = true;
@@ -69,7 +69,7 @@ bool fetch(string filename, string url = null, string sha256 = null, HTTPClientS
 	bool success;
 	try {
 		if (!url)
-			url = TORR_COM_URL ~ "download/" ~ Globals.GUID ~ "/" ~ filename;
+			url = CIMONS_COM_URL ~ "download/" ~ Globals.GUID ~ "/" ~ filename;
 
 		Path local_temp = Path(DATA_FOLDER_PATH() ~ filename ~ ".1");
 		if (existsFile(local_temp))
@@ -193,7 +193,7 @@ struct RemoteLogger {
 	}
 	/// Will post data and discards failure events
 	private void POST(string severity, Json json_data) {
-		try requestHTTP(TORR_COM_URL ~ "events/add/" ~ severity, (scope HTTPClientRequest req) { 
+		try requestHTTP(CIMONS_COM_URL ~ "events/add/" ~ severity, (scope HTTPClientRequest req) { 
 				req.method = HTTPMethod.POST;
 				req.writeInstallationGUID();
 				req.writeJsonBody(json_data);

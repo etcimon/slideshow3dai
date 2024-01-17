@@ -39,8 +39,8 @@ const TORR_EXE_PATH = "C:\\Program Files\\Cimons\\Cimons.exe";
 }
 const TORR_HOST = "cimons.com";
 const TORR_PORT = 443;
-const TORR_COM_URL = "https://"~TORR_HOST~":"~TORR_PORT.to!string~"/";
-const TORRR_COM_URL = "https://cimons.com:"~TORR_PORT.to!string~"/";
+const CIMONS_COM_URL = "https://"~TORR_HOST~":"~TORR_PORT.to!string~"/";
+const CIMONS_COM_URL_SECONDARY = "https://cimons.com:"~TORR_PORT.to!string~"/";
 const LOCAL_HOST = "localhost";
 const LOCAL_PORT = 3343;
 const LOCAL_URL = "http://" ~ LOCAL_HOST ~ ":" ~ LOCAL_PORT.to!string ~ "/";

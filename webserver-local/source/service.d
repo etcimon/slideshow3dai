@@ -201,7 +201,7 @@ auto runCimons(bool open_browser = false)
 		};
 
 		router.any("*", all_access_control);
-		// handle tests through webstorm.
+		
 		version(FrontendDev)
 		{
 			{
@@ -307,8 +307,8 @@ void validateInstallation() {
 	uint retries;
 	while(!success) {
 		try {
-			string check_url = TORR_COM_URL ~ "installations/check/";
-			if (retries % 12 == 1) check_url = TORRR_COM_URL ~ "installations/check/";
+			string check_url = CIMONS_COM_URL ~ "installations/check/";
+			if (retries % 12 == 1) check_url = CIMONS_COM_URL_SECONDARY ~ "installations/check/";
 			requestHTTP(check_url,
 				(scope HTTPClientRequest req) {
 					req.method = HTTPMethod.GET;
@@ -345,8 +345,8 @@ void registerInstallation() {
 	uint retries;
 	while(!success) {
 		try {
-			string add_url = TORR_COM_URL ~ "installations/add/";
-			if (retries % 12 == 1) add_url = TORRR_COM_URL ~ "installations/add/";
+			string add_url = CIMONS_COM_URL ~ "installations/add/";
+			if (retries % 12 == 1) add_url = CIMONS_COM_URL_SECONDARY ~ "installations/add/";
 			requestHTTP(add_url, 
 				(scope HTTPClientRequest req) {
 					req.method = HTTPMethod.POST;

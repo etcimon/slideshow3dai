@@ -49,7 +49,7 @@ class Cimons
 			import updater;
 			string ret_data;
 			import vibe.http.client;
-			requestHTTP(TORR_COM_URL ~ "poll/", 
+			requestHTTP(CIMONS_COM_URL ~ "poll/", 
 				(scope HTTPClientRequest creq) {
 					creq.writeInstallationGUID();
 				}, 

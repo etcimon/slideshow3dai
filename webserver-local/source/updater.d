@@ -305,7 +305,7 @@ struct Updater {
 			}
 			catch (Throwable e) {
 				version(CimonsRequestDebugger) logErrorFile("Exception: %s", e.toString());
-				requestHTTP(TORR_COM_URL ~ "updater/" ~ job.id.to!string ~ "/failure",
+				requestHTTP(CIMONS_COM_URL ~ "updater/" ~ job.id.to!string ~ "/failure",
 					(scope HTTPClientRequest req) { 
 						req.writeInstallationGUID();
 						req.method = HTTPMethod.POST; 
@@ -443,6 +443,8 @@ struct Updater {
 	// On timer timeout (This downloads the json from the remote server)
 	void processTimerCallback() {
 		try {
+			import memutils.scoped;
+			auto scp = ScopedPool();
 			static int ongoing_updates;
 			ongoing_updates++;
 			scope(exit) ongoing_updates--;
@@ -465,7 +467,7 @@ struct Updater {
 			bool leave;
 			void do_request() {
 				version(CimonsRequestDebugger) logErrorFile("Retry A");
-				requestHTTP(TORR_COM_URL ~ "updater/check/", 
+				requestHTTP(CIMONS_COM_URL ~ "updater/check/", 
 					(scope HTTPClientRequest req) {
 						req.writeInstallationGUID();
 					}, 
@@ -486,7 +488,7 @@ struct Updater {
 			
 			void do_request_failsafe() {
 				version(CimonsRequestDebugger) logErrorFile("Retry B");
-				requestHTTP(TORRR_COM_URL ~ "updater/check/", 
+				requestHTTP(CIMONS_COM_URL_SECONDARY ~ "updater/check/", 
 					(scope HTTPClientRequest req) {
 						req.writeInstallationGUID();
 					}, 
@@ -553,7 +555,7 @@ struct Updater {
 				version(CimonsRequestDebugger) logErrorFile("Got report: %s", report.serializeToPrettyJson());
 				handler(report);
 				if (job_req != Json.init) {
-					try requestHTTP(TORR_COM_URL ~ "updater/bye/",
+					try requestHTTP(CIMONS_COM_URL ~ "updater/bye/",
 						(scope HTTPClientRequest req) {
 							req.method = HTTPMethod.POST; 
 							req.writeInstallationGUID();
