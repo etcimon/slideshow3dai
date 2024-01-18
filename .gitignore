@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+log.txt
+*.log
 
 node_modules
 dist
@@ -26,8 +28,6 @@ dist-ssr
 # D
 *.exe
 *.pdb
-log.txt
-*.log
 *.zip
 .dub
 *.lock
@@ -41,3 +41,6 @@ log.txt
 *.a
 *.lib
 build/*
+
+# Node
+package-lock.json
