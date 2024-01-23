@@ -19,15 +19,15 @@ void createUninstaller() {
 
 	Key HKLM = Registry.localMachine;
 	Key uninstall_info = HKLM.getKeyRW("Software").getKeyRW("Microsoft").getKeyRW("Windows").getKeyRW("CurrentVersion").getKeyRW("Uninstall").maybeCreateKey("Cimons");
-	uninstall_info.setValue("DisplayIcon", TORR_EXE_PATH);
+	uninstall_info.setValue("DisplayIcon", CIMONS_EXE_PATH);
 	uninstall_info.setValue("DisplayName", "Cimons");
-	uninstall_info.setValue("DisplayVersion", TORR_VERSION);
-	uninstall_info.setValue("InstallLocation", TORR_EXE_FOLDER_PATH);
+	uninstall_info.setValue("DisplayVersion", CIMONS_VERSION);
+	uninstall_info.setValue("InstallLocation", CIMONS_EXE_FOLDER_PATH);
 	uninstall_info.setValue("Language", cast(uint)0);
 	uninstall_info.setValue("NoModify", cast(uint)1);
 	uninstall_info.setValue("NoRepair", cast(uint)1);
 	uninstall_info.setValue("Publisher", "Cimons Team");
-	uninstall_info.setValue("UninstallString", `"` ~ TORR_EXE_PATH ~ `" --uninstall`);
+	uninstall_info.setValue("UninstallString", `"` ~ CIMONS_EXE_PATH ~ `" --uninstall`);
 	uninstall_info.setValue("VersionMajor", cast(uint)2);
 	uninstall_info.setValue("VersionMinor", cast(uint)0);
 	uninstall_info.setValue("EstimatedSize", 6800);
@@ -48,7 +48,7 @@ string getVersion() {
 }
 
 void updateVersion() {
-	string new_version = TORR_VERSION;
+	string new_version = CIMONS_VERSION;
 	import std.windows.registry;
 	Key HKLM = Registry.localMachine;
 	return HKLM.getKeyRW("Software").getKeyRW("Microsoft").getKeyRW("Windows").getKeyRW("CurrentVersion").getKeyRW("Uninstall").getKeyRW("Cimons").setValue("DisplayVersion", new_version);

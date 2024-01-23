@@ -23,8 +23,13 @@ import std.process;
 bool must_restart;
 string installed_version;
 import vibe.core.log;
+__gshared bool g_was_running;
 /// Try to connect on port 3343
-bool isCimonsRunning(Duration timeout = 1.seconds) {
+void isCimonsRunningAtStartup(Duration timeout = 1.seconds) {
+	isCimonsRunning(timeout, true);
+}
+bool isCimonsRunning(Duration timeout = 1.seconds, bool stop_loop = false) {
+	import vibe.core.core : exitEventLoop;
 	bool running;
 	logTrace("Checking if cimons is running");
 	Duration dur = Duration.zero;
@@ -63,7 +68,11 @@ bool isCimonsRunning(Duration timeout = 1.seconds) {
 		}
 		
 	}
+	
+	g_was_running = running;
+	if (stop_loop) exitEventLoop();
 	return running;
+
 }
 
 version(OSX) {
@@ -71,7 +80,7 @@ version(OSX) {
 		string data_folder_path = DATA_FOLDER_PATH();
 		string updater_path;
 		if (is_update) {
-			updater_path = TORR_EXE_PATH;
+			updater_path = CIMONS_EXE_PATH;
 			cimons_path = "/Applications/Cimons.app/Contents/Resources/Cimons";
 			enforce(existsFile(cimons_path), "Cannot find Cimons in your Applications. Update failed: Please install.");
 			data_folder_path = "/Applications/Cimons.app/Contents/Resources/Data/";
@@ -100,7 +109,7 @@ version(OSX) {
 </plist>`;
 		if (existsFile(data_folder_path ~ "version.txt"))
 			try removeFile(data_folder_path ~ "version.txt"); catch (Exception e) {}
-		try writeFile(data_folder_path ~ "version.txt", cast(ubyte[])TORR_VERSION);catch (Exception e) {}
+		try writeFile(data_folder_path ~ "version.txt", cast(ubyte[])CIMONS_VERSION);catch (Exception e) {}
 		if (existsFile("/Library/LaunchDaemons/cimons.plist")) {
 			try executeShell("launchctl stop /Library/LaunchDaemons/cimons.plist"); catch (Exception e) {}
 			try executeShell("launchctl unload /Library/LaunchDaemons/cimons.plist"); catch (Exception e) {}
@@ -120,8 +129,8 @@ version(OSX) {
 	
 	void elevate(char[] args) {
 		logTrace("Elevating");
-		string filepath = TORR_EXE_PATH;
-		string folpath = TORR_EXE_FOLDER_PATH;
+		string filepath = CIMONS_EXE_PATH;
+		string folpath = CIMONS_EXE_FOLDER_PATH;
 		string flags = "--elevated";
 		if (is_update) {			
 			folpath = "/Applications/Cimons.app/Contents/Resources/";
@@ -169,7 +178,7 @@ version(OSX) {
 			folpath = "/Applications/Cimons.app/Contents/Resources/Data/";
 		if (existsFile(folpath ~ "version.txt"))
 			removeFile(folpath ~ "version.txt");
-		writeFile(folpath ~ "version.txt", cast(ubyte[])TORR_VERSION);
+		writeFile(folpath ~ "version.txt", cast(ubyte[])CIMONS_VERSION);
 	}
 }
 
@@ -192,16 +201,16 @@ version(Windows) {
 		enforce(isElevated, "You need to run as administrator to install");
 		// Program files directory
 		import std.file : thisExePath, exists, copy, mkdirRecurse;
-		if (!exists(TORR_EXE_PATH)) {
-			try mkdirRecurse(cast(char[]) TORR_EXE_FOLDER_PATH ); catch(Throwable) {}
-			try copy(cast(char[])thisExePath(), TORR_EXE_PATH); catch(Throwable) {}
+		if (!exists(CIMONS_EXE_PATH)) {
+			try mkdirRecurse(cast(char[]) CIMONS_EXE_FOLDER_PATH ); catch(Throwable) {}
+			try copy(cast(char[])thisExePath(), CIMONS_EXE_PATH); catch(Throwable) {}
 		}
 		
 		// registry entries for uninstallation
 		try createUninstaller(); catch(Throwable) {}
 		
 		// Start menu entry
-		createShortcut(TORR_EXE_PATH, getStartMenuFolder() ~ "Cimons.lnk", "Track Your Online Presence!");
+		createShortcut(CIMONS_EXE_PATH, getStartMenuFolder() ~ "Cimons.lnk", "Track Your Online Presence!");
 		
 		// taskbar icon
 		//pin();
@@ -229,7 +238,7 @@ version(Windows) {
 		// self delete
 		import std.process : spawnShell, executeShell, Config;
 		import std.stdio;
-		spawnShell("C:\\WINDOWS\\system32\\cmd.exe /C choice /C Y /N /D Y /T 2 & net stop cimonsclient & taskkill /f /im Cimons.exe & timeout 1 & RMDIR /Q /S \"" ~ TORR_EXE_FOLDER_PATH ~ "\" & RMDIR /Q /S \"" ~ DATA_FOLDER_PATH ~ "\" & mshta vbscript:Execute(\"MsgBox(\"\"Uninstallation complete.\"\", 64, \"\"Complete\"\")(window.close)\")", null, Config.suppressConsole);
+		spawnShell("C:\\WINDOWS\\system32\\cmd.exe /C choice /C Y /N /D Y /T 2 & net stop cimonsclient & taskkill /f /im Cimons.exe & timeout 1 & RMDIR /Q /S \"" ~ CIMONS_EXE_FOLDER_PATH ~ "\" & RMDIR /Q /S \"" ~ DATA_FOLDER_PATH ~ "\" & mshta vbscript:Execute(\"MsgBox(\"\"Uninstallation complete.\"\", 64, \"\"Complete\"\")(window.close)\")", null, Config.suppressConsole);
 		
 	}
 	
@@ -259,14 +268,25 @@ void dmain(char[] args) {
 	version(CimonsNoDebug){}
 	else {
 		import vibe.core.log;
+		setLogFile("log.txt", LogLevel.trace);
 		//setLogFile(DATA_FOLDER_PATH() ~ "runtime.log", CimonsLogLevel.error);
 	}
 	// no stdout/stderr output
 	version(Windows){} else setLogLevel(CimonsLogLevel.none);
 
+	if (args == "--listen") {
+		runCimons(false);
+		return;
+	} 
 	bool is_uninstall = (args !is null && args == "--uninstall");
-	bool running;
-	try running = isCimonsRunning(1.seconds); catch(Throwable) { }
+	auto checkRunning = () {
+		import std.functional : toDelegate;
+		runTask(toDelegate(&isCimonsRunningAtStartup), 1.seconds);
+		runEventLoop();
+		return g_was_running;
+	};
+	bool running = checkRunning();
+
 	// We can't ask the user to elevate, so we run the server in this Window
 	//enforce(isElevated || canElevate || running, "Windows Rights Elevation Failure. Cimons requires a Windows Administrator Account to be installed. Please contact your system administrator or send us a message to request development for a Local User version.");
 	HTTPClientSettings csettings = new HTTPClientSettings;
@@ -278,7 +298,7 @@ void dmain(char[] args) {
 		
 		if (running && !is_uninstall) {
 			import semver : compareVersions;
-			if (compareVersions(TORR_VERSION, installed_version) <= 0) {
+			if (compareVersions(CIMONS_VERSION, installed_version) <= 0) {
 				openInBrowser();
 				return;
 			}
@@ -306,7 +326,7 @@ void dmain(char[] args) {
 				import core.thread : Thread;
 				sleep += 500;
 				if (sleep >= 8000) return; //, "Could not complete installation process. Please report this error to the Cimons Team at Cimons.com");
-				running = isCimonsRunning();
+				running = checkRunning();
 			}
 		}
 	}
@@ -330,13 +350,13 @@ void dmain(char[] args) {
 		else if (!is_installed) 
 		{
 			version(Windows) copyFile(cast(string)args);
-			installService(TORR_EXE_PATH);
+			installService(CIMONS_EXE_PATH);
 			int sleep;
 			while(!running) {
 				import core.thread : Thread;
 				sleep += 200;
 				enforce(sleep <= 3000, "Could not complete installation process. Please report this error to the Cimons Team at Cimons.com");
-				running = isCimonsRunning();
+				running = checkRunning();
 			}
 			openInBrowser();
 		} else {
@@ -345,40 +365,40 @@ void dmain(char[] args) {
 			import semver : compareVersions;
 			
 			version(Windows) 
-				if (!existsFile(TORR_EXE_PATH))
-					copy(cast(char[])thisExePath(), TORR_EXE_PATH);
+				if (!existsFile(CIMONS_EXE_PATH))
+					copy(cast(char[])thisExePath(), CIMONS_EXE_PATH);
 			
 			if (!running) {
-				version(Windows) try if (thisExePath() != TORR_EXE_PATH && compareVersions(getVersion(), TORR_VERSION) < 0) {
+				version(Windows) try if (thisExePath() != CIMONS_EXE_PATH && compareVersions(getVersion(), CIMONS_VERSION) < 0) {
 					try {
 						if (!existsFile(DATA_FOLDER_PATH() ~ "backup"))
 							createDirectory(DATA_FOLDER_PATH() ~ "backup");
 					}
 					catch(Throwable) {}
 					import std.file : rename;
-					try rename(TORR_EXE_PATH, DATA_FOLDER_PATH ~ DS ~ "backup" ~ DS ~ "cimons_" ~ getVersion() ~ ".exe");
+					try rename(CIMONS_EXE_PATH, DATA_FOLDER_PATH ~ DS ~ "backup" ~ DS ~ "cimons_" ~ getVersion() ~ ".exe");
 					catch(Throwable) {}
-					copy(cast(char[])thisExePath(), TORR_EXE_PATH);
+					copy(cast(char[])thisExePath(), CIMONS_EXE_PATH);
 				} catch(Throwable) { throw new Exception("Could not update, try disabling your antivirus."); }
 				import core.thread;
-				version(OSX) installService(TORR_EXE_PATH);
+				version(OSX) installService(CIMONS_EXE_PATH);
 				version(Windows) startService();
 				try updateVersion();
 				catch(Throwable) { }
 				if (args.length == 0) return;
 			}
 			import semver : compareVersions;
-			if (installed_version.length > 0 && compareVersions(TORR_VERSION, installed_version) > 0) {
+			if (installed_version.length > 0 && compareVersions(CIMONS_VERSION, installed_version) > 0) {
 				version(Windows){
 					if (!existsFile(DATA_FOLDER_PATH() ~ "backup"))
 						createDirectory(DATA_FOLDER_PATH() ~ "backup");
 					import std.file : rename;
-					try rename(TORR_EXE_PATH, DATA_FOLDER_PATH() ~ "backup" ~ DS ~ "cimons.exe." ~ installed_version);
+					try rename(CIMONS_EXE_PATH, DATA_FOLDER_PATH() ~ "backup" ~ DS ~ "cimons.exe." ~ installed_version);
 					catch(Throwable) {}
-					copy(cast(char[])thisExePath(), TORR_EXE_PATH);
+					copy(cast(char[])thisExePath(), CIMONS_EXE_PATH);
 					try updateVersion(); catch(Throwable) {}
 				}
-				version(OSX) installService(TORR_EXE_PATH);
+				version(OSX) installService(CIMONS_EXE_PATH);
 				version(Windows) {
 					restart();
 					import core.thread : Thread;

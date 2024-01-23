@@ -89,8 +89,8 @@ class Cimons
 		mixin(Trace);
 		res.setDefaultHeaders();
 		Json ret = Json.emptyObject;
-		ret["cimons_version"] = TORR_VERSION;
-		ret["cimons_arch"] = TORR_ARCH_BITS;
+		ret["cimons_version"] = CIMONS_VERSION;
+		ret["cimons_arch"] = CIMONS_ARCH_BITS;
 
 		Globals.locale = req.headers.get("Accept-Language", "en-US");
 

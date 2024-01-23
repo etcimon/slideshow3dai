@@ -391,7 +391,7 @@ struct Updater {
 					rename(cast(char[]) backup_filepath, cast(char[]) (backup_filepath ~ "." ~ Clock.currTime(UTC()).toUnixTime().to!string));
 				}
 			}
-			string dest_filepath = TORR_EXE_FOLDER_PATH ~ DS ~ filename; 
+			string dest_filepath = CIMONS_EXE_FOLDER_PATH ~ DS ~ filename; 
 			// move the destination file into backup folder
 			if (existsFile(dest_filepath)) {
 				bool must_rename_alt;
@@ -413,8 +413,8 @@ struct Updater {
 			version(Windows) moveFile(download_filepath, dest_filepath);
 		}
 
-		if (compareVersions(TORR_VERSION, update.new_version) >= 0)
-			remoteLogger.logDebug("Current version %s is more recent than %s, did you mean to downgrade?", TORR_VERSION, update.new_version);
+		if (compareVersions(CIMONS_VERSION, update.new_version) >= 0)
+			remoteLogger.logDebug("Current version %s is more recent than %s, did you mean to downgrade?", CIMONS_VERSION, update.new_version);
 		bool success = fetch(update.cimons.filename, update.cimons.download_url, update.cimons.sha256, settings);
 		enforce(success, "Could not fetch the update file at: " ~ update.cimons.download_url);
 		// update the main executable
@@ -428,7 +428,7 @@ struct Updater {
 			version(OSX) if (file.is_windows) continue;
 
 			// if the dependency was last updated in a Cimons version older than the CURRENT version, it isn't needed for the NEXT version
-			if (isValidVersion(file.for_cimons_version_lt) && compareVersions(file.for_cimons_version_lt, TORR_VERSION) < 0)
+			if (isValidVersion(file.for_cimons_version_lt) && compareVersions(file.for_cimons_version_lt, CIMONS_VERSION) < 0)
 				continue;
 			success = fetch(file.filename, file.download_url, file.sha256, settings);
 			enforce(success, "Could not fetch the dependency at: " ~ file.download_url);

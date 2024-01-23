@@ -11,12 +11,12 @@ bool is_update;
 version(Windows) enum DS = "\\";
 else enum DS = "/";
 version(Windows) {
-const TORR_EXE_FOLDER_PATH = "C:\\Program Files\\Cimons";
-const TORR_EXE_PATH = "C:\\Program Files\\Cimons\\Cimons.exe";
+const CIMONS_EXE_FOLDER_PATH = "C:\\Program Files\\Cimons";
+const CIMONS_EXE_PATH = "C:\\Program Files\\Cimons\\Cimons.exe";
 } else version (OSX) {
 	extern(C) int _NSGetExecutablePath(char* buf, uint* bufsize);
 
-	@property string TORR_EXE_FOLDER_PATH() {
+	@property string CIMONS_EXE_FOLDER_PATH() {
 		static string fol_path;
 		if (!fol_path)
 		{
@@ -30,27 +30,27 @@ const TORR_EXE_PATH = "C:\\Program Files\\Cimons\\Cimons.exe";
 		}
 		return fol_path;	
 	}
-	@property string TORR_EXE_PATH() {
+	@property string CIMONS_EXE_PATH() {
 		static string exe_path;
 		if (!exe_path)
-			exe_path = TORR_EXE_FOLDER_PATH ~ "Cimons";
+			exe_path = CIMONS_EXE_FOLDER_PATH ~ "Cimons";
 		return exe_path;
 	}
 }
-const TORR_HOST = "cimons.com";
-const TORR_PORT = 443;
-const CIMONS_COM_URL = "https://"~TORR_HOST~":"~TORR_PORT.to!string~"/";
-const CIMONS_COM_URL_SECONDARY = "https://cimons.com:"~TORR_PORT.to!string~"/";
+const CIMONS_HOST = "cimons.com";
+const CIMONS_PORT = 443;
+const CIMONS_COM_URL = "https://"~CIMONS_HOST~":"~CIMONS_PORT.to!string~"/";
+const CIMONS_COM_URL_SECONDARY = "https://cimons.com:"~CIMONS_PORT.to!string~"/";
 const LOCAL_HOST = "localhost";
 const LOCAL_PORT = 3343;
 const LOCAL_URL = "http://" ~ LOCAL_HOST ~ ":" ~ LOCAL_PORT.to!string ~ "/";
-const TORR_VERSION = "0.0.1";
+const CIMONS_VERSION = "0.0.1";
 version(X86_64)
-	const TORR_ARCH_BITS = "64";
+	const CIMONS_ARCH_BITS = "64";
 else version(X86)
-	const TORR_ARCH_BITS = "32";
+	const CIMONS_ARCH_BITS = "32";
 else
-	const TORR_ARCH_BITS = "32";
+	const CIMONS_ARCH_BITS = "32";
 
 const APP_WIDTH = 1010;
 const APP_HEIGHT = 689;
@@ -244,7 +244,7 @@ string getStartMenuFolder() {
 	if (!data_folder) {
 		first_check = true;
 		version(OSX) {
-			data_folder = TORR_EXE_FOLDER_PATH ~ "Data/";
+			data_folder = CIMONS_EXE_FOLDER_PATH ~ "Data/";
 		}
 		else version(Windows) {
 			string[] paths = standardPaths(StandardPath.data);
@@ -254,6 +254,8 @@ string getStartMenuFolder() {
 					path = path_;
 			}
 			data_folder = path ~ DS ~ "Cimons" ~ DS;
+			import vibe.core.log : logTrace;
+			logTrace("Data folder: %s", data_folder);
 		}
 	}
 	if (!exists(data_folder)) {

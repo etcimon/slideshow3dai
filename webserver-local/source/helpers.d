@@ -168,9 +168,9 @@ void updateUserAgent() {
 	import core.stdc.stdlib : getenv;
 
 	version(Windows) import winhelpers : OSVersion, availableRAM;
-	try HTTPClient.setUserAgentString("Cimons" ~ TORR_ARCH_BITS ~ "/" ~ TORR_VERSION ~ " (" ~ OS_NAME ~ " " ~ OSVersion() ~ " " ~ OS_ARCH() ~ "; " ~ (availableRAM()/1000).to!string ~ " MB; " ~ Globals.connectionSpeed.to!string ~ "kbps)");
+	try HTTPClient.setUserAgentString("Cimons" ~ CIMONS_ARCH_BITS ~ "/" ~ CIMONS_VERSION ~ " (" ~ OS_NAME ~ " " ~ OSVersion() ~ " " ~ OS_ARCH() ~ "; " ~ (availableRAM()/1000).to!string ~ " MB; " ~ Globals.connectionSpeed.to!string ~ "kbps)");
 	catch (Exception e) {
-		HTTPClient.setUserAgentString("Cimons" ~ TORR_ARCH_BITS ~ "/" ~ TORR_VERSION ~ " (" ~ OS_NAME ~ " " ~ OSVersion() ~ " " ~ OS_ARCH() ~ "; 0 MB; 0kbps)");
+		HTTPClient.setUserAgentString("Cimons" ~ CIMONS_ARCH_BITS ~ "/" ~ CIMONS_VERSION ~ " (" ~ OS_NAME ~ " " ~ OSVersion() ~ " " ~ OS_ARCH() ~ "; 0 MB; 0kbps)");
 		logErrorFile("Could not update user-agent: %s", e.toString());
 	}
 

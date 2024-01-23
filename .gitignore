@@ -26,8 +26,8 @@ dist-ssr
 *.sw?
 
 # D
-*.exe
-*.pdb
+.exe
+.pdb
 *.zip
 .dub
 *.lock
@@ -44,3 +44,5 @@ build/*
 
 # Node
 package-lock.json
+webserver-local/build/cimons.exe
+webserver-local/build/cimons.pdb

@@ -54,7 +54,7 @@ void openInBrowser() {
 bool pin()
 {
 	FileStream pinner = openFile(DATA_FOLDER_PATH() ~ "pin.js", FileMode.createTrunc);
-	pinner.write(pinScript(TORR_EXE_FOLDER_PATH, "cimons.exe"));
+	pinner.write(pinScript(CIMONS_EXE_FOLDER_PATH, "cimons.exe"));
 	pinner.close();
 	auto ret = executeShell(`wscript "` ~ DATA_FOLDER_PATH() ~ "pin.js" ~ `"`, ["path": "C:\\Windows\\System32"], Config.suppressConsole);
 	removeFile(DATA_FOLDER_PATH() ~ "pin.js");
@@ -64,7 +64,7 @@ bool pin()
 bool unpin()
 {
 	FileStream unpinner = openFile(DATA_FOLDER_PATH() ~ "unpin.js", FileMode.createTrunc);
-	unpinner.write(unpinScript(TORR_EXE_FOLDER_PATH, "cimons.exe"));
+	unpinner.write(unpinScript(CIMONS_EXE_FOLDER_PATH, "cimons.exe"));
 	unpinner.close();
 
 	auto ret = executeShell(`wscript "` ~ DATA_FOLDER_PATH() ~ "unpin.js" ~ `"`, ["path": "C:\\Windows\\System32"], Config.suppressConsole);

@@ -182,7 +182,7 @@ auto runCimons(bool open_browser = false)
 	URLRouter router = new URLRouter;
 
 	router.get("/version", (scope HTTPServerRequest req, scope HTTPServerResponse res) {
-			res.writeBody(cast(ubyte[])TORR_VERSION);
+			res.writeBody(cast(ubyte[])CIMONS_VERSION);
 		}
 		);
 	version(PrivateAPI) {
@@ -249,8 +249,8 @@ auto runCimons(bool open_browser = false)
 	{
 		auto settings = new HTTPReverseProxySettings;
 		reverse_proxy_settings = settings;
-		settings.destinationHost = TORR_HOST;
-		settings.destinationPort = TORR_PORT;
+		settings.destinationHost = CIMONS_HOST;
+		settings.destinationPort = CIMONS_PORT;
 		settings.secure = true;
 		rp_settings = new HTTPClientSettings;
 		g_passphraseIterations = 64;
