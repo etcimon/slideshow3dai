@@ -19,7 +19,13 @@
 // See https://github.com/WebAssembly/binaryen/blob/6371cf63687c3f638b599e086ca668c04a26cbbb/src/passes/Asyncify.cpp#L106-L113
 // for structure details.
 
-const EXPORTED_FROM_D = ['domEvent', 'jsCallback0', 'jsCallback']
+const EXPORTED_FROM_D = [
+  'domEvent',
+  'jsCallback0',
+  'jsCallback',
+  'loadApp',
+  'dumpApp',
+];
 
 // Start unwind buffers halfway through the stack space
 const DATA_ADDR = 524288;
@@ -34,7 +40,7 @@ const WRAPPED_EXPORTS = new WeakMap();
 const State = {
   None: 0,
   Unwinding: 1,
-  Rewinding: 2
+  Rewinding: 2,
 };
 
 function isPromise(obj: any) {
@@ -47,13 +53,13 @@ function isPromise(obj: any) {
 
 function proxyGet(obj: any, transform: any) {
   return new Proxy(obj, {
-    get: (obj, name) => transform(obj[name])
+    get: (obj, name) => transform(obj[name]),
   });
 }
 
 class Asyncify {
-    exports : any;
-    value : any;
+  exports: any;
+  value: any;
   constructor() {
     this.value = undefined;
     this.exports = null;
@@ -72,22 +78,28 @@ class Asyncify {
 
   wrapImportFn(fn: any) {
     return (...args: any) => {
-      if (this.getState() === State.Rewinding) {
+      let curState = this.getState();
+      if (curState === State.Rewinding) {
         this.exports.asyncify_stop_rewind();
         return this.value;
       }
       this.assertNoneState();
-      let value = fn(...args);
-      if (!isPromise(value)) {
-        return value;
+      try {
+        let value = fn(...args);
+        if (!isPromise(value)) {
+          return value;
+        }
+        this.exports.asyncify_start_unwind(DATA_ADDR);
+        this.value = value;
+      } catch (e) {
+        console.error("[wrapImportFn] Error in asyncify'd function: ", e);
+        throw e;
       }
-      this.exports.asyncify_start_unwind(DATA_ADDR);
-      this.value = value;
     };
   }
 
   wrapModuleImports(module: any) {
-    return proxyGet(module, (value : any)=> {
+    return proxyGet(module, (value: any) => {
       if (typeof value === 'function') {
         return this.wrapImportFn(value);
       }
@@ -103,7 +115,7 @@ class Asyncify {
     );
   }
 
-  wrapExportFn(fn: any) {
+  wrapExportFn(fn: any, exportName: string) {
     let newExport = WRAPPED_EXPORTS.get(fn);
 
     if (newExport !== undefined) {
@@ -112,20 +124,23 @@ class Asyncify {
 
     newExport = async (...args: any) => {
       this.assertNoneState();
+      try {
+        let result = await fn(...args);
 
-      let result = fn(...args);
+        while (this.getState() === State.Unwinding) {
+          this.exports.asyncify_stop_unwind();
+          this.value = await this.value;
+          this.assertNoneState();
+          this.exports.asyncify_start_rewind(DATA_ADDR);
+          result = await fn(...args);
+        }
 
-      while (this.getState() === State.Unwinding) {
-        this.exports.asyncify_stop_unwind();
-        this.value = await this.value;
         this.assertNoneState();
-        this.exports.asyncify_start_rewind(DATA_ADDR);
-        result = fn(...args);
+        return result;
+      } catch (e) {
+        console.log('While calling: ', exportName, args);
+        throw new Error("Error in asyncify'd function: " + exportName);
       }
-
-      this.assertNoneState();
-
-      return result;
     };
 
     WRAPPED_EXPORTS.set(fn, newExport);
@@ -139,11 +154,11 @@ class Asyncify {
     for (let exportName in exports) {
       let value = exports[exportName];
       if (typeof value === 'function' && EXPORTED_FROM_D.includes(exportName)) {
-        value = this.wrapExportFn(value);
+        value = this.wrapExportFn(value, exportName);
       }
       Object.defineProperty(newExports, exportName, {
         enumerable: true,
-        value
+        value,
       });
     }
 
@@ -198,6 +213,6 @@ export async function instantiateStreaming(source: any, imports: any) {
     source,
     state.wrapImports(imports)
   );
-  state.init(result.instance, imports);
+  await state.init(result.instance, imports);
   return result;
 }

@@ -39,8 +39,10 @@ auto connectDB()
 		{
 			auto params = [
 				"host": "127.0.0.1",
-				"database": "cimons",
-				"user": "root",
+				"database": "slideshow3dai",
+				"user": "postgres",
+				"password": "xxxxxxxxx",
+				"ssl": "require",
 				"statement_timeout": "90000"
 			];
 
@@ -49,7 +51,7 @@ auto connectDB()
 		{
 			auto params = [
 				"host": "/tmp/.s.PGSQL.5432",
-				"database": "cimons",
+				"database": "slideshow3dai",
 				"user": "root",
 				"statement_timeout": "90000"
 			];

@@ -1,0 +1,5 @@
+*.mp4
+*.png
+web/
+__pycache__/
+package-lock.json

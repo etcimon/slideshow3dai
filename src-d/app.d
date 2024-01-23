@@ -1,169 +1,113 @@
-import libwasm.dom;
-import libwasm.types;
-import libwasm.spa;
-import libwasm.bindings;
-import libwasm.rt.allocator;
-import libwasm.router;
+module app;
 
-import memutils.utils;
-import memutils.vector;
-import memutils.scoped;
-import fast.json;
-import fast.format;
-import libwasm.moment;
-import optional;
-import libwasm.promise;
+import libwasm;
+
+import navbar;
+import dock;
+
 nothrow:
 @safe:
 
 mixin Spa!App;
+/***
+  - Login/Register/Reset Password screen (Sign in with Apple / Sign in with Google)
+  - Workspace with project folders in grid
+  - List of photos in a project with metadata (Size, Date modified, caption)
+    - Checkmark to select the photos
+    - Delete icon
+    - Add photo button
+    - Next button
+  - Vertical list with selected photos large previews and size, clickable to edit, reorder button
+  - Tap-ordering view (numbers increment each tap to define ordering?)
+    - Clickable number on photos
+    - Number field with ordering and up/down arrows
+  - Photo edit screen with bottom horizontal toolbar (Rotate, Crop, Filter, Motion, Transition, Save)
+  - Preview screen with play button, pause button, and timeline scrubber
+  - Export screen with options (Quality, Resolution, Format, Filesize)
+  - Share screen with options (Social media, Email, Copy link)
+  - Settings screen with options (Account, Notifications, Privacy, Help)
+  - Render queue screen with progress bars and cancel button (for each transition+motion slide)
+    - Photos have b/w->color progress% over the icon
 
-struct A {
-  @serialize string App;
-  @serialize double num;
-  @serialize ulong numa;
+*/
+
+
+/*
+<div class="navbar bg-base-100 shadow-sm">
+  <div class="navbar-start">
+    <div class="dropdown">
+      <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" /> </svg>
+      </div>
+      <ul
+        tabindex="0"
+        class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+        <li><a>Item 1</a></li>
+        <li>
+          <a>Parent</a>
+          <ul class="p-2">
+            <li><a>Submenu 1</a></li>
+            <li><a>Submenu 2</a></li>
+          </ul>
+        </li>
+        <li><a>Item 3</a></li>
+      </ul>
+    </div>
+    <a class="btn btn-ghost text-xl">daisyUI</a>
+  </div>
+  <div class="navbar-center hidden lg:flex">
+    <ul class="menu menu-horizontal px-1">
+      <li><a>Item 1</a></li>
+      <li>
+        <details>
+          <summary>Parent</summary>
+          <ul class="p-2">
+            <li><a>Submenu 1</a></li>
+            <li><a>Submenu 2</a></li>
+          </ul>
+        </details>
+      </li>
+      <li><a>Item 3</a></li>
+    </ul>
+  </div>
+  <div class="navbar-end">
+    <a class="btn">Button</a>
+  </div>
+</div>
+*/
+
+
+
+extern (C) void logObjects();
+
+struct Main { nothrow:
+  @child Page page;
+
+  struct Page {
+    @prop!"innerHTML" string innerHTML = `<div class="container mx-auto p-4 max-h-fit"><h1 class="text-4xl font-bold">Hello World!</h1></div>`;
+
+    //
+    mixin NodeDef!"div";
+  }
+  //
+  @style!"bg-base-100 shadow-sm" mixin NodeDef!"section";
 }
 
-struct User {
-    string id;
-    int user;
-    string createdAt;
-}
-
-struct Input {
-  @style!"new-todo" mixin NodeDef!"input";
-  mixin Slot!"enter";
-  mixin Slot!"input";
-  @prop string value;
-  @attr string placeholder = "What needs to be done?";
-  @callback void onKeyPress(KeyboardEvent event) {
-    value = node.value;
-    if (event.key == "Enter")
-      this.emit(enter);
-    this.emit(input);
-  }
-  @entering!"/home" Optional!(Promise!void) home(ref RouterEvent ev) {
-    console.log("called promise home");
-    router().setTitle("Home");
-    return Optional!(Promise!void)();
-  }
-  @entering!"/test2" Optional!(Promise!void) test2(ref RouterEvent ev) {
-    console.log("called promise test2");
-    router().setTitle("Test2");
-    return Optional!(Promise!void)();
-  }
-}
-
-  
-struct SomeText {
-  mixin NodeDef!"p";
-  @prop auto textContent = "Some text";
-  @prop string innerHTML;
-}
-
-    
-struct Main {
-  nothrow:
-  @style!"main" mixin NodeDef!"section";
-  @child Input field;
-  @child SomeText some_text;
-  private ManagedPool m_pool;
-  private bool m_construct_called;
-
-  void construct() {
-    m_pool = ManagedPool(64*1024);
-    m_construct_called = true;
-  }
-
-  void catchOnClick(Handle hndl) {
-    auto pool = ScopedPool(m_pool);
-    MouseEvent ev = MouseEvent(hndl);
-    console.log("Hello from D");
-    console.log(ev);
-    auto requestInfo = RequestInfo("https://reqres.in/api/users/2");
-        RequestInit ri = RequestInit(JSON.parse(`{
-      "method": "POST",
-      "headers": {
-        "Content-Type": "application/json;charset=utf-8"
-      },
-      "body": "{\"user\": 123}"
-    }`));
-    auto promise = window.fetch(requestInfo, ri);
-    promise.then(r => r.text).then((scope data){
-      console.log("Resolved");
-        console.log(typeof(data).stringof);
-        auto sp = ScopedPool(m_pool);
-        console.log(data.as!string);
-        auto user_json = parseJSON!PoolStackAllocator(data.as!string);
-        User user = user_json.read!User;
-        console.log(user.createdAt);
-      }).error((scope reason) {
-        console.log("Caught error");
-        console.log(reason);
-      }).await();
-      console.log("Finished");
-  }
-
-  @connect!("field.enter") void enter() {
-    auto pool = ScopedPool(m_pool);
-    import diet.html : compileHTMLDietFile;
-        RequestInit ri = RequestInit(JSON.parse(`{
-      "method": "POST",
-      "headers": {
-        "Content-Type": "application/json;charset=utf-8"
-      },
-      "body": "{\"user\": 123}"
-    }`));
-    auto requestInfo = RequestInfo("https://reqres.in/api/users/2");
-    auto promise = window.fetch(requestInfo, ri);
-    auto promise_then = promise.then(r => r.text).then((scope data){
-      console.log("Resolved");
-        console.log(typeof(data).stringof);
-        auto sp = ScopedPool(m_pool);
-        console.log(data.as!string);
-        auto user_json = parseJSON!PoolStackAllocator(data.as!string);
-        User user = user_json.read!User;
-        console.log(user.createdAt);
-      }).error((scope reason) {
-        console.log("Caught error");
-        console.log(reason);
-      });
-    auto new_promise = [promise_then.handle].all();
-    new_promise.await();
-    string s = new string(5);
-    s = "hello";
-    console.log(s);
-    Vector!char output;
-    unexportDelegate("on_click");
-    exportDelegate("on_click", &catchOnClick);
-    compileHTMLDietFile!(`home.dt`)(output);
-        
-        console.log(format!"Output length is %d"(output.length)[]);
-      console.log(output[]);
-    this.some_text.update.innerHTML = output[];    
-    logObjects();
-  }
-  @connect!("field.input") void input() {    
-    console.log("Hello");
-  }
-}
-extern(C) void logObjects();
-
-
-struct App {
-  nothrow:
-
-  @style!"todoapp" mixin NodeDef!"section";
-  @child Main main_section;
+struct App
+{
+nothrow:
+  @child NavBar navbar;
+  @child Main content;
+  @child Dock dock;
 
   ManagedPool m_pool;
-  
-  void construct() {
-    m_pool = ManagedPool(64*1024);
+
+  void construct()
+  {
+    m_pool = ManagedPool(64 * 1024);
+    console.log("Construct called");
   }
 
-  @trusted static void _start() {
-    // mem for js promises
-
-  }
+  //  
+  mixin NodeDef!"div";
 }

@@ -44,5 +44,8 @@ build/*
 
 # Node
 package-lock.json
-webserver-local/build/cimons.exe
-webserver-local/build/cimons.pdb
+webserver-local/build/slideshow3dai.exe
+webserver-local/build/slideshow3dai.pdb
+webserver/slideshow3dai-server.exe
+webserver/slideshow3dai-server.pdb
+bun.lockb

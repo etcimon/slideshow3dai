@@ -1,0 +1,118 @@
+{
+  "124": {
+    "inputs": {
+      "image": "sung-choi-cockpit-sungchoi-1600px.jpg",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "171": {
+    "inputs": {
+      "focal_px": 0,
+      "depth_pro_model": [
+        "203",
+        0
+      ],
+      "image": [
+        "124",
+        0
+      ]
+    },
+    "class_type": "DepthPro",
+    "_meta": {
+      "title": "Depth Pro"
+    }
+  },
+  "172": {
+    "inputs": {
+      "depth": [
+        "171",
+        0
+      ]
+    },
+    "class_type": "MetricDepthToInverse",
+    "_meta": {
+      "title": "Metric Depth to Inverse"
+    }
+  },
+  "189": {
+    "inputs": {
+      "strength": 1,
+      "feature_threshold": 0,
+      "feature_param": "intensity",
+      "feature_mode": "relative",
+      "intensity": 1,
+      "reverse": false,
+      "loop": true,
+      "smooth": true,
+      "phase": 0,
+      "steady_value": 0.3
+    },
+    "class_type": "DepthflowMotionPresetHorizontal",
+    "_meta": {
+      "title": "🌊 Depthflow Motion Preset Horizontal"
+    }
+  },
+  "196": {
+    "inputs": {
+      "animation_speed": 1,
+      "input_fps": 30,
+      "output_fps": 30,
+      "num_frames": 90,
+      "quality": 50,
+      "ssaa": 1.2000000000000002,
+      "invert": 0,
+      "tiling_mode": "mirror",
+      "image": [
+        "124",
+        0
+      ],
+      "depth_map": [
+        "172",
+        0
+      ],
+      "motion": [
+        "189",
+        0
+      ]
+    },
+    "class_type": "Depthflow",
+    "_meta": {
+      "title": "🌊 Depthflow"
+    }
+  },
+  "202": {
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "196",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "203": {
+    "inputs": {
+      "precision": "fp16"
+    },
+    "class_type": "LoadDepthPro",
+    "_meta": {
+      "title": "(Down)Load Depth Pro model"
+    }
+  }
+}

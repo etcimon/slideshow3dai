@@ -61,7 +61,7 @@ const seed = async () => {
   const hashedPassword = await SecurePassword.hash(process.env["ADMIN_PASSWORD"])
   await db.user.create({
     data: {
-      email: "etienne@cimons.com",
+      email: "etienne@psxai.com",
       hashedPassword,
       profile: {
         create: {

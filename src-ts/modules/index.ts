@@ -3,4 +3,4 @@ import * as bindings from './bindings.ts';
 import * as spa from './spa.ts';
 import * as libwasm from './libwasm.ts';
 const modules = [bindings, spa, libwasm];
-export { libwasm, modules }
+export { libwasm, modules };

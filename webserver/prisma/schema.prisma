@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgres"
-  url      = "postgresql://postgres:Psswrd128@localhost:5432/cimons"
+  url      = "postgresql://postgres:xxxxxxxxx@localhost:5432/slideshow3dai"
 }
 
 generator client {
@@ -208,7 +208,7 @@ model Address {
   address2    String?  @db.VarChar(120)
   city        String?
   stateId     Int?     @map("state_id")
-  countryCode String   @map("countryCode") @db.VarChar(2)
+  countryCode String   @map("country_code") @db.VarChar(2)
   postalCode  String?  @map("postal_code") @db.VarChar(16)
 
   state   State?  @relation(fields: [stateId], references: [id])

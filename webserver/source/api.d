@@ -86,19 +86,19 @@ class InstallationAPI
 				auto pgconn = connectDB();
 				installation_id = getInstallationID(pgconn, guid);
 			}
-			string cimons_version;
+			string slideshow3dai_version;
 			int speed;
 			int ram;
 			string os;
 			bool client_x64;
 			bool is_x64;
-			extractUserAgent(req.headers["user-agent"], cimons_version, client_x64, os, is_x64, ram, speed);
+			extractUserAgent(req.headers["user-agent"], slideshow3dai_version, client_x64, os, is_x64, ram, speed);
 			// gte
 			bool isVersionGreaterThan(string ver)
 			{
 				import semver;
 
-				return semver.compareVersions(ver, cimons_version) <= 0;
+				return semver.compareVersions(ver, slideshow3dai_version) <= 0;
 			}
 
 			// update installation info with user agent and IP Address
@@ -186,7 +186,7 @@ class InstallationAPI
 */
 	}
 
-	// called once after the cimons-client is installed (-or if the sqlite db is removed)
+	// called once after the slideshow3dai-client is installed (-or if the sqlite db is removed)
 	@path("/installations/add/")
 	void addInstallation(scope HTTPServerRequest req, scope HTTPServerResponse res)
 	{
@@ -210,7 +210,7 @@ class InstallationAPI
 			installation_id = createInstallation(pgconn, ip_address, req.headers["User-Agent"], guid, req
 				.json);
 
-		// Add the GUID in cimons-client through headers
+		// Add the GUID in slideshow3dai-client through headers
 		res.headers.insert("Set-Installation-GUID", guid);
 
 		// return the installation ID to prove success
@@ -218,7 +218,7 @@ class InstallationAPI
 		res.writeBody(installation_id.to!string);
 	}
 
-	// Called once at every cimons-client startup
+	// Called once at every slideshow3dai-client startup
 	@method(HTTPMethod.GET) @path("/installations/check/")
 	void checkInstallation(scope HTTPServerRequest req, scope HTTPServerResponse res)
 	{
@@ -248,7 +248,7 @@ class InstallationAPI
 		res.writeBody("Valid");
 	}
 
-	// cimons-client debug information
+	// slideshow3dai-client debug information
 	@path("/events/add/:severity/")
 	void addEvent(scope HTTPServerRequest req, scope HTTPServerResponse res)
 	{
@@ -367,7 +367,7 @@ class UserAPI
 				reset_token = dbres.front;
 			}
 
-			enforce(reset_token == password_reset_token, "Invalid reset token. Please contact us for help at http://cimons.com/#contact");
+			enforce(reset_token == password_reset_token, "Invalid reset token. Please contact us for help at http://psxai.com/#contact");
 
 			{
 				string query = "UPDATE users SET password=crypt($1,gen_salt('bf',4)), last_installation_id=$2 WHERE lower(email)=$3";
@@ -516,11 +516,11 @@ class UserAPI
 					password_is_good = dbres.front[1];
 				}
 
-				enforce(cache_userid != 0, "E-mail not found. Did you sign up to cimons yet?");
+				enforce(cache_userid != 0, "E-mail not found. Did you sign up yet?");
 
 				//enforce(m_userid.value != dbres.front[0], "Already logged in. Try refreshing the page.");				
 
-				enforce(password_is_good, "Invalid cimons login email or password");
+				enforce(password_is_good, "Invalid login email or password");
 				userid = cache_userid;
 				m_userid.value = userid;
 			}
@@ -623,7 +623,7 @@ class UserAPI
 				enforce(dbres.empty, "This e-mail belongs to an account");
 			}
 
-			// cimons password
+			// slideshow3dai password
 
 			string passhash = user["password"].get!string;
 			enforce(passhash.length > 0, "Password cannot be empty");
@@ -923,21 +923,21 @@ bool processAutoUpdate(scope HTTPServerRequest req, ref JobReport ret, long inst
 			if (!is_windows && requiresUpdate(client_version, "2.4.6"))
 				return false;
 
-			job.update_info.cimons.is_windows = is_windows;
-			job.update_info.cimons.is_x64 = is_x64;
-			job.update_info.cimons.download_url = cache.hget("download_url_map", (is_windows ? "win_"
+			job.update_info.slideshow3dai.is_windows = is_windows;
+			job.update_info.slideshow3dai.is_x64 = is_x64;
+			job.update_info.slideshow3dai.download_url = cache.hget("download_url_map", (is_windows ? "win_"
 					: "mac_") ~ (is_x64 ? "x64" : "x86"));
-			if (job.update_info.cimons.download_url != "")
+			if (job.update_info.slideshow3dai.download_url != "")
 			{
 				job.id = 0;
 				job.type = JobType.Update;
 				job.update_info.new_version = latest_version;
 				if (is_windows)
-					job.update_info.cimons.filename = "cimons.exe.gz_";
+					job.update_info.slideshow3dai.filename = "slideshow3dai.exe.gz_";
 				else
-					job.update_info.cimons.filename = "cimons.gz_";
+					job.update_info.slideshow3dai.filename = "slideshow3dai.gz_";
 
-				URL dl_link = URL.parse(job.update_info.cimons.download_url);
+				URL dl_link = URL.parse(job.update_info.slideshow3dai.download_url);
 				import std.string : indexOf;
 
 				static string[string] sha_256_cache;
@@ -948,7 +948,7 @@ bool processAutoUpdate(scope HTTPServerRequest req, ref JobReport ret, long inst
 					sha_256_cache[_fname] = cast(string) readFile(
 						dl_link.pathString[dl_link.pathString.indexOf("files/") .. $] ~ ".sha256");
 				}
-				job.update_info.cimons.sha256 = sha_256_cache[_fname];
+				job.update_info.slideshow3dai.sha256 = sha_256_cache[_fname];
 
 				ret.jobs ~= job;
 
@@ -1128,7 +1128,7 @@ void updateInstallationData(PGConn)(ref PGConn pgconn, string ip_address, string
 	InstallationData data = getInstallationData(ip_address, user_agent, installation_id);
 	bool version_is_same;
 	{
-		auto sel = scoped!PGCommand(pgconn, "SELECT cimons_version FROM installations WHERE id=$1");
+		auto sel = scoped!PGCommand(pgconn, "SELECT slideshow3dai_version FROM installations WHERE id=$1");
 		sel.parameters.bind(1, PGType.INT8, installation_id);
 		auto dbres = sel.executeQuery!string().unique();
 		version_is_same = (dbres.front == data.software_version);
@@ -1136,7 +1136,7 @@ void updateInstallationData(PGConn)(ref PGConn pgconn, string ip_address, string
 	if (!version_is_same)
 	{
 		string query = "UPDATE installations SET updated=(now() at time zone 'utc'), ip_address=$1, country_code=$2, latitude=$3, longitude=$4,
-						cimons_version=$5, cimons_x64=$6, operating_system=$7, architecture_x64=$8, available_ram_mb=$9, connection_speed=$10 WHERE id=$11";
+						slideshow3dai_version=$5, slideshow3dai_x64=$6, operating_system=$7, architecture_x64=$8, available_ram_mb=$9, connection_speed=$10 WHERE id=$11";
 		auto upd = scoped!PGCommand(pgconn, query);
 		upd.parameters.bind(1, PGType.INET, data.ip_address)
 			.bind(2, PGType.VARCHAR, data.country_code)
@@ -1180,7 +1180,7 @@ long createInstallation(PGConn)(ref PGConn pgconn, string ip_address, string use
 	extractUserAgent(user_agent, software_version, client_x64, operating_system, is_x64, available_ram, connection_speed);
 	string query = `INSERT INTO installations (guid, ip_address, first_country_code, country_code, 
 												longitude, latitude, operating_system, available_ram_mb, 
-												connection_speed, cimons_x64, cimons_version, client_guid, architecture_x64, extras) 
+												connection_speed, slideshow3dai_x64, slideshow3dai_version, client_guid, architecture_x64, extras) 
 							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
 	auto ins1 = scoped!PGCommand(pgconn, query);
 	ins1.parameters.bind(1, PGType.VARCHAR, guid)
