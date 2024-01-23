@@ -1,31 +1,14 @@
-import vanillaPuppeteer from 'puppeteer'
-import { addExtra } from 'puppeteer-extra'
-import Stealth from 'puppeteer-extra-plugin-stealth'
-import Adblocker from 'puppeteer-extra-plugin-adblocker'
 import cheerio, { AnyNode, Cheerio, Element } from 'cheerio'
 import _ from 'lodash'
+import { Page } from 'puppeteer'
+import type { TaskDataType } from './common'
 
-export default async function (req : Express.Request, res: any) {
+export default async function (page: Page, data: TaskDataType) {
     console.log('Hello world')
-    const store_selected = true
+    const store_selected = true // todo: determine from saved store
+    let products: any = null
     try {
-        const puppeteer = addExtra(vanillaPuppeteer)
-        puppeteer.use(Stealth())
-        puppeteer.use(Adblocker({ blockTrackers: true }))
         console.log('Launching')
-        const page = await (
-            await puppeteer.launch({
-                executablePath:
-                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                headless: false,
-                args: ['--enable-gpu', '--no-sandbox', '--mute-audio'],
-            })
-        ).newPage()
-        page.setDefaultNavigationTimeout(10000)
-        await page.goto('https://www.walmart.com/', {
-            waitUntil: 'networkidle2',
-            timeout: 10000,
-        })
         if (!store_selected) {
             const fulfillment_banner =
                 'button[data-automation-id="fulfillment-banner"]'
@@ -39,7 +22,7 @@ export default async function (req : Express.Request, res: any) {
             await page.waitForSelector(fulfillment_address)
             await page.click(fulfillment_address)
             await page.waitForSelector(store_zip_code)
-            await page.type(store_zip_code, '10040', { delay: 100 })
+            await page.type(store_zip_code, data.zip, { delay: 100 })
             await page.waitForSelector(first_store)
             await page.click(first_store)
             await page.click(save_button)
@@ -82,7 +65,7 @@ export default async function (req : Express.Request, res: any) {
             )
             console.log(products_arr)
 
-            const products = _.filter(
+            products = _.filter(
                 products_arr.map((product_obj: any) => {
                     const prod_spans = product_obj.spans
                     const ret = {
@@ -111,5 +94,5 @@ export default async function (req : Express.Request, res: any) {
     } catch (ex) {
         console.error(ex)
     }
-    res.send('Hello World!')
+    return products
 }

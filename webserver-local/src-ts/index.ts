@@ -1,9 +1,10 @@
 import express from "express";
-
+import maxi from "./maxi";
+import walmart from "./walmart";
 const app = express();
 const port = 8080;
 
-app.get("/walmart", async (req, res) => {
+app.get("/walmart", async (req : any, res : any) => {
   // walmart
   // todo: 
   // - Define input parameters
@@ -13,7 +14,7 @@ app.get("/walmart", async (req, res) => {
   walmart(req, res)
 });
 
-app.get("/maxi", async (req, res) => {
+app.get("/maxi", async (req : any, res : any) => {
   // walmart
   // todo: 
   // - Define input parameters

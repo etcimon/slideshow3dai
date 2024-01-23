@@ -1,28 +1,29 @@
 {
-    "private": true,
-    "name": "cimons-scraper",
-    "description": "Collection of scrapers running locally",
-    "type": "module",
-    "author": "Etienne Cimon <etienne@cimons.com>",
-    "main": "src-ts/index.ts",
-    "scripts": {
-        "dev": "tsx watch src-ts/index.ts",
-        "build": "tsup src-ts/index.ts --format esm,cjs,iife --target node10 --legacy-output"
-    },
-    "dependencies": {
-        "cheerio": "^1.0.0-rc.12",
-        "lodash": "^4.17.21",
-        "puppeteer": "^21.6.1",
-        "puppeteer-cluster": "^0.23.0",
-        "puppeteer-extra": "^3.3.6",
-        "puppeteer-extra-plugin-adblocker": "^2.13.6",
-        "puppeteer-extra-plugin-stealth": "^2.11.2"
-    },
-    "devDependencies": {
-        "@types/bun": "^1.0.2",
-        "@types/express": "^4.17.21",
-        "@types/node": "20.11.5",
-        "prettier": "^3.1.1",
-        "typescript": "^5.3.3"
-    }
+  "private": true,
+  "name": "cimons-scraper",
+  "description": "Collection of scrapers running locally",
+  "type": "module",
+  "author": "Etienne Cimon <etienne@cimons.com>",
+  "main": "src-ts/index.ts",
+  "scripts": {
+    "dev": "tsx watch src-ts/index.ts",
+    "build": "tsup src-ts/index.ts --format esm,cjs,iife --target node15 --legacy-output"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "lodash": "^4.17.21",
+    "puppeteer": "^21.6.1",
+    "puppeteer-cluster": "^0.23.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.2",
+    "@types/express": "^4.17.21",
+    "@types/node": "20.11.5",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  }
 }
